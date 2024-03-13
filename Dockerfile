@@ -27,8 +27,10 @@ RUN git clone https://github.com/xmrig/xmrig.git /xmrig && \
 
 # 构建依赖项并编译xmrig
 WORKDIR /xmrig/build
+
+# 在构建过程中输出更多的调试信息以便排查问题
 RUN cmake .. -DXMRIG_DEPS=../scripts/deps -DBUILD_STATIC=ON && \
-    make -j$(nproc)
+    VERBOSE=1 make -j$(nproc)
 
 # 复制构建好的文件到/usr/local/bin目录下，并移除构建过程中的无用文件
 RUN cp xmrig /usr/local/bin/xmrig && \
