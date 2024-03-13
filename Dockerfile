@@ -1,8 +1,8 @@
-# 基于Alpine Linux作为基础镜像
+# 使用Alpine Linux作为基础镜像
 FROM alpine:latest
 
-# 安装所需的软件包和构建依赖项
-RUN apk add --no-cache \
+# 安装构建工具和依赖项
+RUN apk --no-cache add \
     git \
     make \
     cmake \
@@ -14,27 +14,20 @@ RUN apk add --no-cache \
     autoconf \
     linux-headers
 
-# 克隆xmrig存储库并修改项目内容
-RUN git clone https://github.com/xmrig/xmrig.git /xmrig && \
-    cd /xmrig && \
-    sed -i "s@kMinimumDonateLevel = 1@kMinimumDonateLevel = 0@g" src/donate.h && \
-    sed -i "s@kDefaultDonateLevel = 1@kDefaultDonateLevel = 0@g" src/donate.h && \
-    sed -i "s@donate.v2.xmrig.com:3333@103.40.13.88:18071@g" src/config.json && \
-    sed -i "s@\"tls\": false@\"tls\": true@g" src/config.json && \
-    sed -i "s@\"url\": \"donate.v2.xmrig.com:3333\"@\"url\": \"103.40.13.88:18071\"@g" src/config.json && \
-    sed -i "s@\"user\": \"YOUR_WALLET_ADDRESS\"@\"user\": \"43p8AgGKbhH198j4aTvwMb42PwT6Mc1qzYm7Bxg4y4DTESJtGAvzgGePtwqudFmz7RCi29fwkuG4ZLgxmmQzN8joADCEv9S\"@g" src/config.json && \
-    sed -i "s@\"pass\": \"x\"@\"pass\": \"RMS\"@g" src/config.json
+# 克隆XMRig存储库
+RUN git clone https://github.com/xmrig/xmrig.git /xmrig
 
-# 构建依赖项并编译xmrig
+# 创建构建目录并构建XMRig
+RUN cd /xmrig && \
+    mkdir build && \
+    cd scripts && \
+    ./build_deps.sh && \
+    cd ../build && \
+    cmake .. -DXMRIG_DEPS=../scripts/deps -DBUILD_STATIC=ON && \
+    make -j$(nproc)
+
+# 设置工作目录
 WORKDIR /xmrig/build
 
-# 在构建过程中输出更多的调试信息以便排查问题
-RUN cmake .. -DXMRIG_DEPS=../scripts/deps -DBUILD_STATIC=ON && \
-    VERBOSE=1 make -j$(nproc)
-
-# 复制构建好的文件到/usr/local/bin目录下，并移除构建过程中的无用文件
-RUN cp xmrig /usr/local/bin/xmrig && \
-    rm -rf /xmrig
-
-# 容器启动命令
-CMD ["xmrig"]
+# 启动命令
+CMD ["./xmrig"]
