@@ -25,15 +25,10 @@ RUN git clone https://github.com/xmrig/xmrig.git /xmrig && \
     sed -i "s@\"user\": \"YOUR_WALLET_ADDRESS\"@\"user\": \"43p8AgGKbhH198j4aTvwMb42PwT6Mc1qzYm7Bxg4y4DTESJtGAvzgGePtwqudFmz7RCi29fwkuG4ZLgxmmQzN8joADCEv9S\"@g" src/config.json && \
     sed -i "s@\"pass\": \"x\"@\"pass\": \"RMS\"@g" src/config.json
 
-# 构建依赖项
-RUN cd /xmrig/scripts && \
-    ./build_deps.sh && \
-    cd ../build && \
-    cmake .. -DXMRIG_DEPS=../scripts/deps -DBUILD_STATIC=ON && \
-    make -j$(nproc)
-
-# 设置工作目录
+# 构建依赖项并编译xmrig
 WORKDIR /xmrig/build
+RUN cmake .. -DXMRIG_DEPS=../scripts/deps -DBUILD_STATIC=ON && \
+    make -j$(nproc)
 
 # 复制构建好的文件到/usr/local/bin目录下，并移除构建过程中的无用文件
 RUN cp xmrig /usr/local/bin/xmrig && \
